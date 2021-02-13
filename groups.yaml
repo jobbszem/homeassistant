@@ -1,0 +1,11 @@
+#group:
+#  garage:
+#    name: 'Garázs'
+#    entities:
+#      - cover.kapu
+      
+      
+#  Duna:
+#    name: 'Duna'
+#    entities:
+#      - sensor.
