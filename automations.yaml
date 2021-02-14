@@ -1,0 +1,41 @@
+- id: '1585261841669'
+  alias: duna waterlevel notify
+  description: Duna vízállás riasztás
+  trigger:
+  - below: '138'
+    entity_id: sensor.god_duna_vizallas
+    platform: numeric_state
+  condition:
+  - condition: template
+    value_template: '{{ (as_timestamp(now()) - as_timestamp(states.automation.duna_waterlevel_notify.last_triggered  |
+      default(0)) | int > 86400)}}'
+  action:
+  - data:
+      message: A homokszigetre át lehet menni!
+    service: notify.mobile_app_mi_9_se
+- id: '1585672692839'
+  alias: notification on tv
+  description: ''
+  trigger:
+  - at: '18:00'
+    platform: time
+  condition: []
+  action:
+  - data:
+      message: Boldi, moss fogat, kérlek!
+    service: notify.nappali_tv
+  mode: single
+- id: '1585827520468'
+  alias: Valami turn off
+  description: ''
+  trigger:
+  - entity_id: switch.valami
+    for: 00:05:00
+    from: 'off'
+    platform: state
+    to: 'on'
+  condition: []
+  action:
+  - data: {}
+    entity_id: switch.valami
+    service: switch.turn_off

@@ -1,0 +1,182 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+# http:
+#   base_url: example.duckdns.org:8123
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+wake_on_lan: # enables `wake_on_lan` domain
+
+
+# 
+#recorder:
+#  purge_keep_days: 15
+#  db_url: !secret db_url
+
+#Kodi
+media_player:
+  - platform: kodi
+    name: OSMC_3
+    host: !secret osmc3_host
+    port: !secret osmc3_port
+    
+    enable_websocket: true
+    turn_on_action:
+        - service: media_player.kodi_call_method
+          data:
+            entity_id: media_player.OSMC_3
+            method: Addons.ExecuteAddon
+            addonid: script.json-cec
+            params:
+              command: activate
+    turn_off_action:
+        - service: media_player.media_stop
+          data:
+            entity_id: media_player.OSMC_3
+        - service: media_player.kodi_call_method
+          data:
+            entity_id: media_player.OSMC_3
+            method: Addons.ExecuteAddon
+            addonid: script.json-cec
+            params:
+              command: standby
+    
+    
+webostv:
+  host: !secret tv_host
+  name: Nappali TV
+  
+
+# Jelenlét érzékelő (UPC ConnectBox)
+#device_tracker:
+#  - platform:  upc_connect
+#    password:  !secret router_password
+#    host:      !secret router_host
+#    interval_seconds: 600
+#    consider_home: 1200
+
+# ASUS router
+asuswrt:
+  host:     !secret router_host
+  username: !secret router_username
+  password: !secret router_password
+  sensors:
+    - upload
+    - download
+    - upload_speed
+    - download_speed    
+    
+
+
+#Garázs
+cover:
+  - platform: rpi_gpio
+    relay_time: 1.5
+    covers:
+      - relay_pin: 10
+        state_pin: 8
+        name: 'kapu'
+
+switch:
+# relék 
+  - platform: rpi_gpio
+    #entity_id: switch.gpio_relay
+    invert_logic: true
+    ports:
+      9: Valami
+
+sensor:
+# Duna vízállás
+  - platform: scrape
+    resource: https://www.vizugy.hu/?mapModule=OpGrafikon&AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
+    name: Göd Duna vízállás
+    select: ".vizmercelista  tr  td strong"
+    index: 1
+    # Request every hour
+    scan_interval: 3600
+    unit_of_measurement: 'cm'
+
+# Duna vízhőfok    
+  - platform: scrape
+    resource: https://www.vizugy.hu/?mapModule=OpGrafikon&AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
+    name: Göd Duna vízhőfok
+    select: ".vizmercelista  tr  td"
+    index: 3
+    # Request every hour
+    scan_interval: 3600
+    unit_of_measurement: 'C°'
+    
+  - platform: snmp
+    name: 'page_count'
+    host: !secret xerox_printer_ip
+    baseoid: 1.3.6.1.2.1.43.10.2.1.4.1.1
+    accept_errors: true
+    unit_of_measurement: 'pages'    
+    
+  - platform: snmp
+    name: 'prnblackcap'
+    host: !secret xerox_printer_ip
+    baseoid: 1.3.6.1.2.1.43.11.1.1.8.1.1
+    accept_errors: true
+    
+  - platform: template
+    sensors:
+      black_toner_level:
+      friendly_name: 'Black Toner Level'
+      unit_of_measurement: '%'
+      value_template: '{{ ((states.sensor.prnblacklvl.state | float) / (states.sensor.prnblackcap.state | float)) * 100 | round(1) }}'
+
+input_number:
+  pump_duration:
+    name: "Keringető időtartam"
+    initial: 10
+    min: 0
+    max: 30
+    step: 1
+    
+input_text:
+  pump_times:
+    name: "Keringető időpontok (pl.: 19:00,20:00)"
+    #initial: "19:00,20:00"
+
+
+# yr.no    
+#  - platform: yr
+#    name: Weather_yr
+#    forecast: 24
+#    monitored_conditions:
+#      - temperature
+#      - symbol
+#      - precipitation
+#      - windSpeed
+#      - pressure
+#      - windDirection
+#      - humidity
+#      - fog
+#      - cloudiness
+#      - lowClouds
+#      - mediumClouds
+#      - highClouds
+#      - dewpointTemperature
+    
+    
+    
+# Example configuration.yaml entry
+#camera:
+#  - platform: generic
+#    name: Camera_1
+#    still_image_url: https://www.yr.no/place/Norway/Oslo/Oslo/Oslo/meteogram.svg
+#    stream_source: !secret cam1_link
+#    username: !secret cam1_username
+#    password: !secret cam1_password
