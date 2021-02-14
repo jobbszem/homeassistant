@@ -118,6 +118,9 @@ sensor:
     scan_interval: 3600
     unit_of_measurement: 'C°'
     
+# snmpbulkwalk -v 2c -c public <IP>
+# Replace the ‘iso’ at the beginning with 1 and you’re golden.
+
   - platform: snmp
     name: 'page_count'
     host: !secret xerox_printer_ip
@@ -134,10 +137,11 @@ sensor:
   - platform: template
     sensors:
       black_toner_level:
-      friendly_name: 'Black Toner Level'
+      friendly_name: 'Fekete Toner Szint'
       unit_of_measurement: '%'
       value_template: '{{ ((states.sensor.prnblacklvl.state | float) / (states.sensor.prnblackcap.state | float)) * 100 | round(1) }}'
 
+# Kazán melegvíz keringető időtartam tároló (felülethez és esphome-hoz)
 input_number:
   pump_duration:
     name: "Keringető időtartam"
@@ -145,39 +149,8 @@ input_number:
     min: 0
     max: 30
     step: 1
-    
+
+# Kazán melegvíz keringető indítási időpontok tároló (felülethez és esphome-hoz)
 input_text:
   pump_times:
     name: "Keringető időpontok (pl.: 19:00,20:00)"
-    #initial: "19:00,20:00"
-
-
-# yr.no    
-#  - platform: yr
-#    name: Weather_yr
-#    forecast: 24
-#    monitored_conditions:
-#      - temperature
-#      - symbol
-#      - precipitation
-#      - windSpeed
-#      - pressure
-#      - windDirection
-#      - humidity
-#      - fog
-#      - cloudiness
-#      - lowClouds
-#      - mediumClouds
-#      - highClouds
-#      - dewpointTemperature
-    
-    
-    
-# Example configuration.yaml entry
-#camera:
-#  - platform: generic
-#    name: Camera_1
-#    still_image_url: https://www.yr.no/place/Norway/Oslo/Oslo/Oslo/meteogram.svg
-#    stream_source: !secret cam1_link
-#    username: !secret cam1_username
-#    password: !secret cam1_password
