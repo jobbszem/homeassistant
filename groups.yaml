@@ -8,6 +8,7 @@
 #  Duna:
 #    name: 'Duna'
 #    entities:
+<<<<<<< HEAD
 #      - sensor.
 
 printer:
@@ -15,3 +16,6 @@ printer:
     entities:
       - sensor.page_count
       - sensor.black_toner_level
+=======
+#      - sensor.
+>>>>>>> 02ada4e26180872086b2259a6db8db2653e67364

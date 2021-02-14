@@ -116,6 +116,7 @@ sensor:
     # Request every hour
     scan_interval: 3600
     unit_of_measurement: 'C°'
+<<<<<<< HEAD
     
   - platform: snmp
     name: 'page_count'
@@ -136,6 +137,8 @@ sensor:
       friendly_name: 'Black Toner Level'
       unit_of_measurement: '%'
       value_template: '{{ ((states.sensor.prnblacklvl.state | float) / (states.sensor.prnblackcap.state | float)) * 100 | round(1) }}'
+=======
+>>>>>>> 02ada4e26180872086b2259a6db8db2653e67364
 
 input_number:
   pump_duration:
@@ -148,8 +151,12 @@ input_number:
 input_text:
   pump_times:
     name: "Keringető időpontok (pl.: 19:00,20:00)"
+<<<<<<< HEAD
     #initial: "19:00,20:00"
 
+=======
+    initial: "19:00,20:00"
+>>>>>>> 02ada4e26180872086b2259a6db8db2653e67364
 
 # yr.no    
 #  - platform: yr
