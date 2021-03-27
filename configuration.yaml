@@ -68,15 +68,15 @@ webostv:
 #    consider_home: 1200
 
 # ASUS router
-asuswrt:
-  host:     !secret router_host
-  username: !secret router_username
-  password: !secret router_password
-  sensors:
-    - upload
-    - download
-    - upload_speed
-    - download_speed    
+#asuswrt:
+#  host:     !secret router_host
+#  username: !secret router_username
+#  password: !secret router_password
+# sensors:
+#    - upload
+#    - download
+#    - upload_speed
+#    - download_speed    
     
 
 
@@ -115,7 +115,7 @@ sensor:
     select: ".vizmercelista  tr  td"
     index: 3
     # Request every hour
-    scan_interval: 3600
+    scan_interval: 4000
     unit_of_measurement: 'C°'
     
 # snmpbulkwalk -v 2c -c public <IP>
