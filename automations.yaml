@@ -30,7 +30,7 @@
   description: ''
   trigger:
   - entity_id: switch.valami
-    for: 00:05:00
+    for: 00:25:00
     from: 'off'
     platform: state
     to: 'on'
@@ -39,3 +39,51 @@
   - data: {}
     entity_id: switch.valami
     service: switch.turn_off
+  mode: single
+- alias: UPS changed state
+  trigger:
+  - platform: event
+    event_type: nut.ups_event
+  action:
+  - service: notify.mobile_app_mi_9_se
+    data_template:
+      title: UPS changed state
+      message: '{{ trigger.event.data.notify_msg }}'
+      data:
+        push:
+          sound:
+            name: default
+            critical: 1
+            volume: 1.0
+  id: 8c8837088f3c4eeaa9c914db5d5d1102
+- id: '1627032686499'
+  alias: duna waterlevel notify szodi patak
+  description: Duna vízállás Sződ-Rákosi patak
+  trigger:
+  - entity_id: sensor.god_duna_vizallas
+    platform: numeric_state
+    below: '460'
+    above: '400'
+  condition:
+  - condition: template
+    value_template: '{{ (as_timestamp(now()) - as_timestamp(states.automation.duna_waterlevel_notify_szodi_patak.last_triggered  |
+      default(0)) | int > 86400)}}'
+  action:
+  - data:
+      message: A Sződi patakra fel lehet menni!
+    service: notify.mobile_app_mi_9_se
+  mode: single
+- id: '1630009559453'
+  alias: New Automation
+  description: ''
+  trigger:
+  - platform: state
+    entity_id: switch.camera1_motion_detection
+    from: 'off'
+    to: 'on'
+  condition: []
+  action:
+  - service: notify.mobile_app_mi_9_se
+    data:
+      message: mozgás
+  mode: single
