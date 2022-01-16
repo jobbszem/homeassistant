@@ -87,3 +87,23 @@
     data:
       message: mozgás
   mode: single
+- id: '1641502924659'
+  alias: Szürke víz
+  description: ''
+  trigger:
+  - platform: sun
+    event: sunset
+    offset: '1'
+  - platform: sun
+    event: sunset
+    offset: '5'
+  condition:
+  - condition: numeric_state
+    entity_id: weather.otthon
+    attribute: temperature
+    above: '4'
+  action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.valami
+  mode: single
