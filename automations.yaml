@@ -26,7 +26,7 @@
     service: notify.nappali_tv
   mode: single
 - id: '1585827520468'
-  alias: Valami turn off
+  alias: Szürke víz kikapcs
   description: ''
   trigger:
   - entity_id: switch.valami
@@ -34,11 +34,26 @@
     from: 'off'
     platform: state
     to: 'on'
+    enabled: false
+  - platform: state
+    entity_id:
+    - switch.valami
+    for:
+      hours: 0
+      minutes: 25
+      seconds: 0
+    from: 'off'
+    to: 'on'
   condition: []
   action:
   - data: {}
     entity_id: switch.valami
     service: switch.turn_off
+  - device_id: b054553f3d464229b377f92abc7941ad
+    domain: mobile_app
+    type: notify
+    message: Valami lekapcsolt
+    title: HAssio
   mode: single
 - alias: UPS changed state
   trigger:
@@ -94,6 +109,7 @@
   - platform: sun
     event: sunset
     offset: '1'
+    enabled: false
   - platform: sun
     event: sunset
     offset: '5'
@@ -106,4 +122,5 @@
   - service: switch.turn_on
     target:
       entity_id: switch.valami
+    data: {}
   mode: single

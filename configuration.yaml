@@ -82,21 +82,62 @@ asuswrt:
 
 
 #Garázs
-cover:
-  - platform: rpi_gpio
-    relay_time: 1.5
-    covers:
-      - relay_pin: 10
-        state_pin: 8
-        name: 'kapu'
 
-switch:
+template:
+  - trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.garage_door_open
+        - binary_sensor.garage_door_closed
+    sensor:
+      - name: 'GarageStatus'
+        unique_id: 'Garage_status'
+        state: > 
+          {% if (trigger.to_state.state == 'off' and trigger.entity_id == 'binary_sensor.garage_door_open') %}
+            open
+          {% elif (trigger.to_state.state == 'off' and trigger.entity_id == 'binary_sensor.garage_door_closed') %}
+            closed
+          {% elif (trigger.to_state.state == 'on' and trigger.from_state.state == 'off' and trigger.entity_id == 'binary_sensor.garage_door_open') %}
+            closing
+          {% elif (trigger.to_state.state == 'on' and trigger.from_state.state == 'off' and trigger.entity_id == 'binary_sensor.garage_door_closed') %}
+            opening
+          {% endif %}
+
+cover:
+#  - platform: rpi_gpio
+#    relay_time: 1.5
+#    covers:
+#      - relay_pin: 10
+#        state_pin: 8
+#        name: 'kapu'
+        
+  - platform: template
+    covers:
+      garage_door_esp:
+        friendly_name: Garage Door
+        #value_template: "{{is_state('binary_sensor.garage_door_state', 'on') }}"
+        value_template: '{{ (states.sensor.garagestatus.state) }}'
+        open_cover:
+          service: switch.turn_on
+          data:
+            entity_id: switch.garage_door_trigger
+        close_cover:
+          service: switch.turn_on
+          data:
+            entity_id: switch.garage_door_trigger
+        stop_cover:
+          service: switch.turn_on
+          data:
+            entity_id: switch.garage_door_trigger
+
+
+#switch:
 # relék 
-  - platform: rpi_gpio
+#  - platform: rpi_gpio
     #entity_id: switch.gpio_relay
-    invert_logic: true
-    ports:
-      9: Valami
+#    invert_logic: true
+#    ports:
+#      9: Valami
 
 sensor:
 # Duna vízállás
