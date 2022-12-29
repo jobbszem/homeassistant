@@ -18,8 +18,8 @@ scene: !include scenes.yaml
 
 wake_on_lan: # enables `wake_on_lan` domain
 
-mqtt:
-  broker: 127.0.01
+#mqtt:
+ # broker: 127.0.01
 
 # 
 #recorder:
@@ -139,28 +139,43 @@ cover:
 #    ports:
 #      9: Valami
 
-sensor:
-# Duna vízállás
-  - platform: scrape
-    #resource: https://www.vizugy.hu/?mapModule=OpGrafikon&AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
-    resource: https://www.vizugy.hu/?AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
-    name: Göd Duna vízállás
-    select: ".vizmercelista  tr  td strong"
-    index: 1
+scrape:
+    # Duna vízállás és vízhőfok
+  - resource: https://www.vizugy.hu/?AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
     # Request every hour
     scan_interval: 3600
-    unit_of_measurement: 'cm'
+    sensor:
+      - name: Göd Duna vízállás
+        select: ".vizmercelista  tr  td strong"
+        index: 1
+        unit_of_measurement: 'cm'
+      - name: Göd Duna vízhőfok
+        select: ".vizmercelista  tr  td"
+        index: 3
+        unit_of_measurement: 'C°'
+    
+
+#sensor:
+# Duna vízállás
+#  - platform: scrape
+#    #resource: https://www.vizugy.hu/?mapModule=OpGrafikon&AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
+#    resource: https://www.vizugy.hu/?AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
+#    name: Göd Duna vízállás
+#    select: ".vizmercelista  tr  td strong"
+#    index: 1
+#    # Request every hour
+#    scan_interval: 3600
+#    unit_of_measurement: 'cm'
 
 # Duna vízhőfok    
-  - platform: scrape
-    #resource: https://www.vizugy.hu/?mapModule=OpGrafikon&AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
-    resource: https://www.vizugy.hu/?AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
-    name: Göd Duna vízhőfok
-    select: ".vizmercelista  tr  td"
-    index: 3
-    # Request every hour
-    scan_interval: 4000
-    unit_of_measurement: 'C°'
+#  - platform: scrape
+#    resource: https://www.vizugy.hu/?AllomasVOA=AD95AE19-EA8E-40B0-9C1C-2F82ACBEABD5&mapData=Idosor#mapData
+#    name: Göd Duna vízhőfok
+#    select: ".vizmercelista  tr  td"
+#    index: 3
+#    # Request every hour
+#    scan_interval: 4000
+#    unit_of_measurement: 'C°'
     
 # snmpbulkwalk -v 2c -c public <IP>
 # Replace the ‘iso’ at the beginning with 1 and you’re golden.
@@ -185,7 +200,10 @@ sensor:
 #      unit_of_measurement: '%'
 #      value_template: '{{ ((states.sensor.prnblacklvl.state | float) / (states.sensor.prnblackcap.state | float)) * 100 | round(1) }}'
 
-  - platform: mqtt
+mqtt:
+  #broker: 127.0.0.1
+  sensor:
+  #- platform: mqtt
     name: "osps_temp"
     #friendly_name : "Kinti hőmérséklet"
     state_topic: "OsPs1/telemetry"
