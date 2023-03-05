@@ -1,0 +1,212 @@
+esphome:
+  name: node-garage
+  platform: ESP8266
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  password: !secret node-garage_ota
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Node-Garage Fallback Hotspot"
+    password: !secret node-garage_fallback
+
+captive_portal:
+    
+    
+i2c:
+  sda: D1
+  scl: D2
+  scan: true
+  id: 'bus_a'
+
+# I/O expander
+pcf8574:
+  - id: 'pcf8574_hub'
+    address: 0x27
+    pcf8575: false
+
+
+# ============================================================================= #
+# Bemenetek
+# ============================================================================= #
+binary_sensor:
+
+  #####################################################
+  # normal I/Os
+  #####################################################
+
+#  - platform: gpio
+#    pin:
+#      number: D1
+#      mode: INPUT_PULLUP
+#    name: "Garage Door State"
+#    id: g_door_state
+#    device_class: garage_door
+#    filters:
+#      - delayed_on: 1250ms
+#      - invert:
+
+  #####################################################
+  # pcf8574
+  #####################################################
+  
+  # Garázs nyitva
+  - platform: gpio
+    name: "Garage Door Open"
+    id: gd_open
+    device_class: garage_door
+    pin:
+      pcf8574: pcf8574_hub
+      number: 0
+      mode:
+        input: true
+      inverted: true
+    filters:
+      - delayed_on_off: 1250ms
+      
+      
+  # Garázs zárva
+  - platform: gpio
+    name: "Garage Door Closed"
+    id: gd_closed
+    device_class: garage_door
+    pin:
+      pcf8574: pcf8574_hub
+      number: 1
+      mode:
+        input: true
+      inverted: false
+    filters:
+      - delayed_on_off: 1250ms
+      
+  # Kapu nyitva
+  - platform: gpio
+    name: "Gate Open"
+    id: gate_open
+    device_class: garage_door
+    pin:
+      pcf8574: pcf8574_hub
+      number: 3
+      mode:
+        input: true
+      inverted: true
+    filters:
+      - delayed_on_off: 1250ms
+
+  # Kapu zárva
+  - platform: gpio
+    name: "Gate Closed"
+    id: gate_closed
+    device_class: garage_door
+    pin:
+      pcf8574: pcf8574_hub
+      number: 2
+      mode:
+        input: true
+      inverted: true
+    filters:
+      - delayed_on_off: 1250ms
+      
+      
+# ============================================================================= #
+# Kimenetek
+# ============================================================================= #
+switch:
+
+  #####################################################
+  # normal I/Os
+  #####################################################
+
+#  - platform: gpio
+#    pin: 
+#      number: D5
+#      inverted: true
+#    name: "Garage Door Switch"
+#    id: gd_switch
+#    internal: true
+    
+#  - platform: gpio
+#    pin:
+#      number: D6
+#      inverted: true
+#    name: "Gate Switch"
+#    id: gate_switch
+#    internal: true
+    
+#  - platform: gpio
+#    pin:
+#      number: D7
+#      inverted: true
+#    name: "Gray Water"
+#    id: gray_switch
+  
+  
+
+#####################################################
+# pcf8574
+#####################################################
+  - platform: gpio
+    name: "Garage Door Switch"
+    id: gd_switch
+    internal: true
+    pin:
+      pcf8574: pcf8574_hub
+      number: 4
+      mode:
+        output: true
+      inverted: true
+  
+  - platform: gpio
+    name: "Gate Switch"
+    id: gate_switch
+    internal: true
+    pin:
+      pcf8574: pcf8574_hub
+      number: 5
+      mode:
+        output: true
+      inverted: true
+      
+  - platform: gpio
+    name: "Gray Water"
+    id: gray_switch
+    pin:
+      pcf8574: pcf8574_hub
+      number: 7
+      mode:
+        output: true
+      inverted: true
+  
+# ============================================================================= #
+  - platform: template
+    name: "Garage Door Trigger"
+    turn_on_action:
+    - switch.turn_on: gd_switch
+    - delay: 0.5s
+    - switch.turn_off: gd_switch
+  
+  - platform: template
+    name: "Gate Trigger"
+    turn_on_action:
+    - switch.turn_on: gate_switch
+    - delay: 0.5s
+    - switch.turn_off: gate_switch
+    
+
+      
+#sensor:
+#  - platform: ultrasonic
+#    trigger_pin: D5
+#    echo_pin: D2
+#    name: "Ultrasonic Sensor"

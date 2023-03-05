@@ -1,0 +1,506 @@
+
+
+esphome:
+  name: kazan
+  platform: ESP8266
+  board: nodemcuv2
+  includes:
+    - scheduler.h
+  on_boot:
+    # Alap állapot 
+    then:
+      
+      - if:
+          condition:
+            # Radiátor bekapcsolva
+            binary_sensor.is_on: thermo_sensor_1
+          then:
+            - script.execute: radiator_on
+            
+      - if:
+          condition:
+            # Padló bekapcsolva
+            binary_sensor.is_on: thermo_sensor_2
+          then:
+            - script.execute: padlo_on
+            
+      # Shift Regiszter kimenet engedélyezése
+      - delay: 2s
+      - switch.turn_on: sh_oe_pin    
+      
+  on_shutdown:
+    then: 
+      # Shift Regiszter kimenet tiltása
+      - switch.turn_off: sh_oe_pin    
+  
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Kazan Fallback Hotspot"
+    password: !secret nodemcu2_fallback
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret nodemcu2_ota
+
+ota:
+  password: !secret nodemcu2_ota
+
+
+# ============================================================================= #
+# Globális változók
+# ============================================================================= #
+globals:
+  # Time remaining
+  - id: remaining_time
+    type: int
+    restore_value: no
+    initial_value: "300"
+
+  # Store previous values to verify change.
+  - id: remaining_time_prev
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+# ============================================================================= #
+# Shift regiszter config
+# ============================================================================= #
+sn74hc595:
+  - id: 'switch_hub'
+    data_pin: D5
+    clock_pin: D8
+    latch_pin: D7
+    #oe_pin: D6
+
+
+# ============================================================================= #
+# Time based automations.
+# ============================================================================= #
+time:
+  - platform: sntp
+    id: esphome_time
+    on_time:
+      - seconds: 0
+        minutes: /1
+        then:
+          - lambda: |-
+              if (scheduled_runtime(id(pump_next).state.c_str())) {
+                id(hotwater_pump).turn_on();
+              }
+    
+      # Keringető kikapcsolása 10 perc után
+      # Every 1 minutes
+      #	  - seconds: 0
+#        minutes: /1
+#        then:
+#          - if:
+#              condition:
+#                for:
+#                  time: 10min
+#                  condition:
+#                    switch.is_on: sw_pump_4
+#              then:
+#                - switch.turn_off: sw_pump_4
+#
+#      # Every morning on weekdays
+#      - seconds: 0
+#        minutes: 10
+#        hours: 6
+#        days_of_week: MON-FRI
+#        then:
+#          - switch.turn_on: sw_pump_4
+#          
+#      - seconds: 0
+#        minutes: 05
+#        hours: 7
+#        days_of_week: MON-FRI
+#        then:
+#          - switch.turn_on: sw_pump_4
+#      
+#      # Every evening
+#      - seconds: 0
+#        minutes: 00
+#        hours: 19
+#        then:
+#          - switch.turn_on: sw_pump_4
+#      
+#      - seconds: 0
+#        minutes: 0
+#        hours: 22
+#        then:
+#          - switch.turn_on: sw_pump_4
+#          
+#      - seconds: 0
+#        minutes: 0
+#        hours: 23
+#        then:
+#          - switch.turn_on: sw_pump_4
+
+
+# ============================================================================= #
+# Bemenetek
+# ============================================================================= #
+binary_sensor:
+  # --------------------------------------------------------------------------- #
+  - id: 'thermo_sensor_1'
+    name: "Radiátor"
+    platform: gpio
+    pin: 
+      number: D1
+      inverted: True
+      mode: INPUT_PULLUP
+
+    on_press:
+      then:
+        #- script.execute: radiator_on
+        - switch.turn_on: vs_radiator
+
+    on_release:
+      then:
+        #- script.execute: radiator_off
+        - switch.turn_off: vs_radiator
+
+  # --------------------------------------------------------------------------- #  
+  - id: 'thermo_sensor_2'
+    name: "Padló"
+    platform: gpio
+    pin: 
+      number: D2
+      inverted: True
+      mode: INPUT_PULLUP
+
+    on_press:
+      then:
+        #- script.execute: padlo_on
+        - switch.turn_on: vs_floor
+
+    on_release:
+      then:
+        #- script.execute: padlo_off
+        - switch.turn_off: vs_floor
+      
+
+
+# ============================================================================= #
+# Kimenetek
+# ============================================================================= #
+switch:
+
+  # --------------------------------------------------------------------------- #  
+  # Virtual Zone Switches which toggle the relay, and store the current state.
+  - platform: template
+    name: Melegvíz keringető
+    id: hotwater_pump
+    lambda: return id(sw_pump_4).state;
+    optimistic: true
+    turn_on_action:
+      # Turn on if not disabled.
+      if:
+        condition:
+          lambda: return id(pump_duration) > 0;
+        then:
+          - switch.turn_on: sw_pump_4
+    turn_off_action:
+      - switch.turn_off: sw_pump_4
+      
+
+  # --------------------------------------------------------------------------- #  
+  # Virtual Switches which toggle the relays, and store the current state.
+  # Két keringető és a kazán
+  - platform: template
+    name: Padlófűtés
+    id: vs_floor
+    lambda: return {};
+    optimistic: true
+    turn_on_action:
+      - switch.turn_on: sw_pump_1
+      - switch.turn_on: sw_pump_2
+      - switch.turn_on: sw_heater
+    turn_off_action:
+      - switch.turn_off: sw_pump_1
+      - switch.turn_off: sw_pump_2
+      - if:
+          condition:
+            # Radiátor nincs bekapcsolva
+            switch.is_off: vs_radiator
+          then:
+            - switch.turn_off: sw_heater
+
+
+  # --------------------------------------------------------------------------- #  
+  # Virtual Switches which toggle the relays, and store the current state.
+  # Keringető és a kazán
+  - platform: template
+    name: Radiátor
+    id: vs_radiator
+    lambda: return {};
+    optimistic: true
+    turn_on_action:
+      - switch.turn_on: sw_pump_3
+      - switch.turn_on: sw_heater
+    turn_off_action:
+      - switch.turn_off: sw_pump_3
+      - if:
+          condition:
+            # Padlófűtés nincs bekapcsolva
+            switch.is_off: vs_floor
+          then:
+            - switch.turn_off: sw_heater
+
+      
+  # Shift regiszter kimenetek 
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    id: 'sh_oe_pin'
+    #name: "Shift register OE"
+    pin: D6
+    inverted: True
+    internal: True
+  
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    id: 'sw_heater'
+    name: "Kazán - Fűtés SR#0"
+    pin:
+      sn74hc595: switch_hub
+      number: 0
+      inverted: True
+    internal: True
+  
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    id: 'sw_pump_1'
+    name: "Padló Szivattyú 1 SR#1"
+    pin:
+      sn74hc595: switch_hub
+      number: 1
+      inverted: True
+    internal: True
+  
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "Padló Szivattyú 2 SR#2"
+    id: 'sw_pump_2'
+    pin:
+      sn74hc595: switch_hub
+      number: 2
+      inverted: True
+    internal: True
+  
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "Radiátor Szivattyú SR#3"
+    id: 'sw_pump_3'
+    pin:
+      sn74hc595: switch_hub
+      number: 3
+      inverted: True
+    internal: True
+      
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "Keringető SR#4"
+    id: 'sw_pump_4'
+    pin:
+      sn74hc595: switch_hub
+      number: 4
+      inverted: True
+    internal: True
+      
+    on_turn_on:
+      then:
+        # Start the countdown timer.
+        - globals.set:
+            id: remaining_time
+            value: !lambda return id(pump_duration).state * 60;
+
+        # Show the remaining time.
+        - sensor.template.publish:
+            id: pump_remaining
+            state: !lambda return id(pump_duration).state;
+
+        # Show the "Next Time" as "now".
+        - text_sensor.template.publish:
+            id: pump_next
+            state: "Most"
+        
+    on_turn_off:
+      then:
+        - sensor.template.publish:
+            id: pump_remaining
+            state: "0"
+
+        # Update the next scheduled run time.
+        - text_sensor.template.publish:
+            id: pump_next
+            state: !lambda |-
+              return update_next_runtime(id(pump_times).state);
+
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "Kazán - Melegvíz SR#5"
+    id: 'sw_water_heater'
+    pin:
+      sn74hc595: switch_hub
+      number: 5
+      inverted: True
+    internal: True
+
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "NC SR#6"
+    pin:
+      sn74hc595: switch_hub
+      number: 6
+      inverted: True
+    internal: True
+
+  # --------------------------------------------------------------------------- #
+  - platform: gpio
+    name: "NC SR#7"
+    pin:
+      sn74hc595: switch_hub
+      number: 7
+      inverted: True
+    internal: True
+   
+   
+sensor:
+  # Countdown sensors.
+  - platform: template
+    name: Time Remaining
+    id: pump_remaining
+    lambda: "return 0;"
+    accuracy_decimals: 0
+    unit_of_measurement: minutes
+    icon: mdi:timer
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: return id(remaining_time) == 0;
+            then:
+              - switch.turn_off: sw_pump_4   
+
+  # Retrieve durations settings from the Home Assistant UI.
+  - platform: homeassistant
+    id: ui_pump_duration
+    entity_id: input_number.pump_duration
+    on_value:
+      then:
+      - sensor.template.publish:
+          id: pump_duration
+          state: !lambda return id(ui_pump_duration).state;
+
+  # Store durations.
+  - platform: template
+    name: Pump Duration
+    id: pump_duration
+
+text_sensor:
+  # Retrieve list of times from the Home Assistant UI.
+  - platform: homeassistant
+    id: ui_pump_times
+    entity_id: input_text.pump_times
+    on_value:
+      then:
+        - text_sensor.template.publish:
+            id: pump_times
+            state: !lambda return id(ui_pump_times).state;
+
+  # Store time lists.
+  - platform: template
+    name: Pump Times
+    id: pump_times
+    on_value:
+      then:
+        # Update the next scheduled run time.
+        - text_sensor.template.publish:
+            id: pump_next
+            state: !lambda |-
+              return update_next_runtime(id(pump_times).state);
+
+  # Set the next scheduled time.
+  - platform: template
+    name: Pump Next
+    id: pump_next
+
+# Update the countdown timers every 5 seconds.
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          if (id(remaining_time) > 0) {
+            // Store the previous time.
+            id(remaining_time_prev) = id(remaining_time);
+
+            // When the relay is on.
+            if (id(sw_pump_4).state) {
+              // Decrement the timer.
+              id(remaining_time) -= 5;
+
+              // Turn off the relay when the time reaches zero.
+              if (id(remaining_time) <= 0) {
+                id(sw_pump_4).turn_off();
+                id(remaining_time) = 0;
+              }
+            }
+
+            // Update the remaining time display.
+            if (id(remaining_time_prev) != id(remaining_time)) {
+              //irrigation_zone1_remaining
+              id(pump_remaining).publish_state( (id(remaining_time)/60) + 1 );
+            }
+          }
+
+      
+# Scripts
+script:
+  - id: 'radiator_on'
+    then:
+      #- switch.turn_off: sh_oe_pin
+      - switch.turn_on: sw_pump_3
+      - switch.turn_on: sw_heater
+      #- switch.turn_on: sh_oe_pin
+      
+  - id: 'radiator_off'
+    then:
+      #- switch.turn_off: sh_oe_pin
+      - switch.turn_off: sw_pump_3
+      - if:
+          condition:
+            # Padló nincs bekapcsolva
+            binary_sensor.is_off: thermo_sensor_2
+          then:
+            - switch.turn_off: sw_heater
+      #- switch.turn_on: sh_oe_pin
+      
+  - id: 'padlo_on'
+    then:
+      #- switch.turn_off: sh_oe_pin
+      - switch.turn_on: sw_pump_1
+      - switch.turn_on: sw_pump_2
+      - switch.turn_on: sw_heater
+      #- switch.turn_on: sh_oe_pin
+      
+  - id: 'padlo_off'
+    then:
+      #- switch.turn_off: sh_oe_pin
+      - switch.turn_off: sw_pump_1
+      - switch.turn_off: sw_pump_2
+      - if:
+          condition:
+            # Radiátor nincs bekapcsolva
+            binary_sensor.is_off: thermo_sensor_1
+          then:
+            - switch.turn_off: sw_heater
+      #- switch.turn_on: sh_oe_pin

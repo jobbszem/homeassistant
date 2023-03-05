@@ -1,0 +1,149 @@
+
+esphome:
+  name: nodemcu_1
+  platform: ESP8266
+  board: nodemcuv2
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Nodemcu 1 Fallback Hotspot"
+    password: !secret nodemcu1_fallback
+
+captive_portal:
+
+# Enable logging
+logger: 
+  
+# Enable Home Assistant API
+api:
+  password: !secret nodemcu1_ota
+ota:
+  password: !secret nodemcu1_ota
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+
+# I2C pins 
+# i2c:
+#   sda: D1
+#   scl: D2
+#   scan: true
+  
+# Example configuration entry
+# sensor:
+#   - platform: bme280
+#     temperature:
+#       name: "Temperature"
+#       id: bme280_temp
+#       oversampling: 16x
+#     pressure:
+#       name: "Pressure"
+#       id: bme280_press
+#     humidity:
+#       name: "Humidity"
+#       id: bme280_hum
+#     address: 0x77
+#     update_interval: 60s
+    
+#   - platform: template
+#     name: "Equivalent sea level pressure"
+#     lambda: |-
+#       const float STANDARD_ALTITUDE = 117; // in meters
+#       return id(bme280_press).state / powf(1 - ((0.0065 * STANDARD_ALTITUDE) /
+#         (id(bme280_temp).state + (0.0065 * STANDARD_ALTITUDE) + 273.15)), 5.257); // in hPa
+#     update_interval: 60s
+#     unit_of_measurement: 'hPa'  
+    #=A4/HATVÁNY(1-(0,0065 * $C$1) / (B4 + (0,0065 * $C$1) + 273,15);5,257)
+    
+    
+#  - platform: bme280
+#    temperature:
+#      name: "Temperature B"
+#      id: bme280_temp_b
+#      oversampling: 16x
+#    pressure:
+#      name: "Pressure B"
+#      id: bme280_press_b
+#    humidity:
+#      name: "Humidity B"
+#      id: bme280_hum_b
+#    address: 0x76
+#    update_interval: 60s
+
+
+# ============================================================================= #
+# Bemenetek
+# ============================================================================= #
+binary_sensor:
+
+  #####################################################
+  # normal I/Os
+  #####################################################
+
+  - platform: gpio
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+    name: "Garage Door State"
+    id: g_door_state
+    device_class: garage_door
+    filters:
+      - delayed_on: 250ms
+      - invert:
+    on_press: 
+      then:
+        - output.turn_on: gpio_out
+    
+    on_release: 
+      then:
+        - output.turn_off: gpio_out
+    
+  - platform: gpio
+    pin:
+      number: D2
+      mode: INPUT_PULLUP
+    name: "Garage Door State2"
+    id: g_door_state2
+    device_class: garage_door
+    filters:
+      - delayed_on: 250ms
+      - invert:
+    on_press: 
+      then:
+        - output.turn_on: gpio_out2
+    
+    on_release: 
+      then:
+        - output.turn_off: gpio_out2
+
+# ============================================================================= #
+# Kimenetek
+# ============================================================================= #
+# Example configuration entry
+output:
+  - platform: gpio
+    pin: D5
+    id: gpio_out
+
+  - platform: gpio
+    pin: D6
+    id: gpio_out2
+
+
+# ============================================================================= #
+# Kapcsolók
+# ============================================================================= #
+# switch:
+#   # Shift regiszter kimenetek 
+#   # --------------------------------------------------------------------------- #
+#   - platform: gpio
+#     id: 'sh_oe_pin'
+#     #name: "Shift register OE"
+#     pin: D6
+#     inverted: True
