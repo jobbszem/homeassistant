@@ -29,31 +29,37 @@
   alias: Szürke víz kikapcs
   description: ''
   trigger:
-  - entity_id: switch.valami
-    for: 00:25:00
+  - entity_id: switch.gray_water
+    for: 00:35:00
     from: 'off'
     platform: state
     to: 'on'
-    enabled: false
+    enabled: true
   - platform: state
     entity_id:
-    - switch.valami
-    for:
-      hours: 0
-      minutes: 25
-      seconds: 0
+    - switch.gray_water
     from: 'off'
     to: 'on'
+    for:
+      hours: 0
+      minutes: 35
+      seconds: 0
+    attribute: state
   condition: []
   action:
   - data: {}
-    entity_id: switch.valami
     service: switch.turn_off
+    target:
+      entity_id: switch.gray_water
   - device_id: b054553f3d464229b377f92abc7941ad
     domain: mobile_app
     type: notify
     message: Valami lekapcsolt
     title: HAssio
+    enabled: false
+  - service: notify.mobile_app_mi_9_se
+    data:
+      message: Valami kikapcsolt
   mode: single
 - alias: UPS changed state
   trigger:
@@ -89,7 +95,7 @@
     service: notify.mobile_app_mi_9_se
   mode: single
 - id: '1630009559453'
-  alias: New Automation
+  alias: camera1_motion_detection
   description: ''
   trigger:
   - platform: state
@@ -120,7 +126,58 @@
     above: '4'
   action:
   - service: switch.turn_on
-    target:
-      entity_id: switch.valami
     data: {}
+    target:
+      entity_id: switch.gray_water
+  - service: notify.mobile_app_mi_9_se
+    data:
+      message: Valami bekapcsolt
   mode: single
+- id: '1672941820781'
+  alias: Run Vacuum Zone
+  description: ''
+  trigger: []
+  condition: []
+  action:
+  - service: vacuum.stop
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - service: script.turn_on
+    data_template:
+      entity_id: ' {% if states.input_select.vacuum_rooms.state == "Zuhany" %} script.vacuum_shower
+        {% elif states.input_select.vacuum_rooms.state == "Háló" %} script.vacuum_masterbed
+        {% elif states.input_select.vacuum_rooms.state == "Előszoba" %} script.vacuum_lobby
+        {% elif states.input_select.vacuum_rooms.state == "Boldi" %} script.vacuum_boldi
+        {% elif states.input_select.vacuum_rooms.state == "Átjáró" %} script.vacuum_gateway
+        {% elif states.input_select.vacuum_rooms.state == "Konyha" %} script.vacuum_kitchen
+        {% elif states.input_select.vacuum_rooms.state == "Nappali" %} script.vacuum_living_room
+        {% elif states.input_select.vacuum_rooms.state == "WC" %} script.vacuum_wc
+        {% elif states.input_select.vacuum_rooms.state == "Fürdő" %} script.vacuum_bath
+        {% elif states.input_select.vacuum_rooms.state == "Réka" %} script.vacuum_reka
+        {% elif states.input_select.vacuum_rooms.state == "Zorka" %} script.vacuum_zorka
+        {% elif states.input_select.vacuum_rooms.state == "Folyosó" %} script.vacuum_corridor
+        {%endif %} '
+  mode: single
+- id: '1672958280726'
+  alias: 'Reset Vacuum: Turn off Mop and Turn to Max'
+  description: ''
+  trigger: []
+  action:
+  - service: script.roborock_set_manual_mode
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      vacuum: max
+      mopping: 'off'
+    enabled: false
+  - service: script.set_mopping_route
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      route: standard
+    enabled: false

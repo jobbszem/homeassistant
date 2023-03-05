@@ -1,0 +1,265 @@
+new_script:
+  alias: New Script
+  sequence: []
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_stop:
+  alias: 'Porszívó: Állj'
+  sequence:
+  - service: Vacuum.Stop
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_return_to_dock:
+  alias: 'Porszívó: Dokkoló'
+  sequence:
+  - service: Vacuum.return_to_base
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_shower:
+  alias: 'Porszívó: Zuhany'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 19900
+        - 24750
+        - 21900
+        - 27900
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_masterbed:
+  alias: 'Porszívó: Háló'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 19900
+        - 27900
+        - 23700
+        - 31500
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_lobby:
+  alias: 'Porszívó: Előszoba'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 23700
+        - 24750
+        - 26000
+        - 31600
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_boldi:
+  alias: 'Porszívó: Boldi'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 19900
+        - 22400
+        - 24876
+        - 24750
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_gateway:
+  alias: 'Porszívó: Átjáró'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 25050
+        - 22300
+        - 26600
+        - 25100
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_kitchen:
+  alias: 'Porszívó: Konyha'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 25900
+        - 25100
+        - 28200
+        - 30900
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_living_room:
+  alias: 'Porszívó: Nappali'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 28200
+        - 25100
+        - 32200
+        - 31500
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_wc:
+  alias: 'Porszívó: WC'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 26900
+        - 23900
+        - 29000
+        - 25100
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_bath:
+  alias: 'Porszívó: Fürdő'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 26700
+        - 22000
+        - 29000
+        - 23100
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_reka:
+  alias: 'Porszívó: Réka'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 30200
+        - 22000
+        - 33300
+        - 25100
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_zorka:
+  alias: 'Porszívó: Zorka'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 28900
+        - 18900
+        - 33300
+        - 21400
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_corridor:
+  alias: 'Porszívó: Folyosó'
+  sequence:
+  - service: xiaomi_miio.vacuum_clean_zone
+    target:
+      entity_id: vacuum.roborock_vacuum_a15
+    data:
+      repeats: 1
+      zone:
+      - - 28900
+        - 21400
+        - 30200
+        - 25100
+  mode: single
+  icon: mdi:robot-vacuum
+vacuum_set_manual_mode:
+  alias: Set Roborock manual vacuum and mopping settings
+  fields:
+    vacuum:
+      description: 'Vacuum mode - can be: silent | balanced | turbo | max'
+      example: max
+    mopping:
+      description: 'Mopping mode - can be: off | low | medium | high'
+      example: 'off'
+  sequence:
+  - alias: Config variables
+    variables:
+      config_vacuum:
+        silent: 101
+        balanced: 102
+        turbo: 103
+        max: 104
+      config_mopping:
+        'off': 200
+        low: 201
+        medium: 202
+        high: 203
+      vacuum_mode: '{{ config_vacuum[vacuum] }}'
+      mopping_mode: '{{ config_mopping[mopping] }}'
+  - choose:
+    - alias: Invalid vacuum value
+      conditions:
+      - condition: template
+        value_template: '{{ vacuum not in config_vacuum|list }}'
+      sequence:
+      - service: system_log.write
+        data:
+          message: Invalid vacuum value '{{ vacuum }}'. Valid values are {{ config_vacuum|list|join(',
+            ') }}
+          level: warning
+          logger: roborock
+    - alias: Invalid mopping value
+      conditions:
+      - condition: template
+        value_template: '{{ mopping not in config_mopping|list }}'
+      sequence:
+      - service: system_log.write
+        data:
+          message: Invalid mopping value '{{ lavaggio }}'. Valid values are {{ config_mopping|list|join(',
+            ') }}
+          level: warning
+          logger: roborock
+    default:
+    - alias: Set vacuum mode
+      service: vacuum.send_command
+      target:
+        entity_id: vacuum.roborock_vacuum_a15
+      data:
+        command: set_custom_mode
+        params: '[{{ vacuum_mode }}]'
+    - alias: Set mopping mode
+      service: vacuum.send_command
+      target:
+        entity_id: vacuum.roborock_vacuum_a15
+      data:
+        command: set_water_box_custom_mode
+        params: '[{{ mopping_mode }}]'
+  mode: single
+  icon: mdi:robot-vacuum

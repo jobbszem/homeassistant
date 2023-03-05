@@ -28,6 +28,21 @@ wake_on_lan: # enables `wake_on_lan` domain
 #  purge_keep_days: 15
 #  db_url: !secret db_url
 
+influxdb:
+  api_version: 2
+  ssl: false
+  host: !secret wb_host
+  port: !secret wb_port
+  token: !secret influx_token
+  organization: !secret influx_org
+  bucket: !secret influx_bucket
+  tags:
+    source: HA
+  tags_attributes:
+    - friendly_name
+  default_measurement: units
+  
+
 #Kodi
 media_player:
   - platform: kodi
@@ -57,18 +72,10 @@ media_player:
               command: standby
     
     
-webostv:
-  host: !secret tv_host
-  name: Nappali TV
-  
+# webostv:
+#   host: !secret tv_host
+#   name: Nappali TV
 
-# Jelenlét érzékelő (UPC ConnectBox)
-#device_tracker:
-#  - platform:  upc_connect
-#    password:  !secret router_password
-#    host:      !secret router_host
-#    interval_seconds: 600
-#    consider_home: 1200
 
 # ASUS router
 asuswrt:

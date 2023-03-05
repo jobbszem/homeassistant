@@ -6,4 +6,4 @@
   draw: ['all']
   attributes:
     - calibration_points
-      
+  scan_interval: 20
