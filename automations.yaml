@@ -84,11 +84,13 @@
   - entity_id: sensor.god_duna_vizallas
     platform: numeric_state
     below: '460'
-    above: '400'
+    above: 280
+    enabled: true
   condition:
   - condition: template
-    value_template: '{{ (as_timestamp(now()) - as_timestamp(states.automation.duna_waterlevel_notify_szodi_patak.last_triggered  |
-      default(0)) | int > 86400)}}'
+    value_template: '{{ now() - state_attr(''automation.duna_waterlevel_notify_szodi_patak'',
+      ''last_triggered'') > timedelta(hours=12) }}'
+    enabled: true
   action:
   - data:
       message: A Sződi patakra fel lehet menni!
@@ -118,7 +120,7 @@
     enabled: false
   - platform: sun
     event: sunset
-    offset: '5'
+    offset: '60'
   condition:
   - condition: numeric_state
     entity_id: weather.otthon

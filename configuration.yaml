@@ -78,10 +78,10 @@ media_player:
 
 
 # ASUS router
-asuswrt:
-  host:     !secret router_host
-  username: !secret router_username
-  password: !secret router_password
+#asuswrt:
+# host:     !secret router_host
+#  username: !secret router_username
+#  password: !secret router_password
 # sensors:
 #    - upload
 #    - download
@@ -139,6 +139,80 @@ template:
           {% else %}
             open
           {% endif %}
+          
+          
+#####################
+# Fogyaztás mérő(k)
+#####################
+
+  - sensor:
+      - unique_id: power_cons_boldi
+        attributes:
+            friendly_name: "Boldi gépe in kWh"
+        icon: mdi:transmission-tower-export
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: "{{ states('sensor.smart_plug_teljesitmeny')|float(0) }}"
+        availability: "{{ states('sensor.smart_plug_teljesitmeny')|is_number }}"
+        
+        
+      - unique_id: solar_days_since_installation
+        attributes:
+            friendly_name: "Telepítés óta eltelt napok"
+        unit_of_measurement: 'Nap'
+        state: "{{ ((as_timestamp(now()) - as_timestamp('2023-08-02 00:00:00')) | int /60/1440) | round(0) }}"
+        
+        
+      - unique_id: solar_average_daily_production
+        attributes:
+          friendly_name: Napi átlag termelés
+        unit_of_measurement: 'kWh'
+        state: >
+            {{ (states('sensor.solaredge_ac_energy_kwh') | float  / 1000 /
+            states('sensor.template_solar_days_since_installation') | int ) | float(1) | round(2) }}
+        
+        
+      - unique_id: energy_average_daily_consumption
+        attributes:
+          friendly_name: "Napi átlag fogyasztás"
+        unit_of_measurement: 'kWh'
+        state: >
+            {{ ( (states('sensor.w1000_import') | float - 
+            states('sensor.w1000_export') | float  + 
+            states('sensor.solaredge_ac_energy_kwh') | float  / 1000 ) /
+            states('sensor.template_solar_days_since_installation') | int ) | float(1) | round(2) }}
+        
+        
+      - unique_id: return_of_investment
+        attributes:
+          friendly_name: Várható megtérülés
+        unit_of_measurement: 'év'
+        state: >
+            {% set return = 0 %}
+            {% if (states('sensor.template_energy_average_daily_consumption') != 'unknown' and states('sensor.template_solar_average_daily_production') != 'unknown') %}
+                {% set yearly_cons = states('sensor.template_energy_average_daily_consumption') | float  * 365 %}
+                {% set yearly_prod = states('sensor.template_solar_average_daily_production') | float  * 365 %}
+                {% set discount_price = 36  %}
+                {% set market_price = 70.1  %}
+                {% set yearly_limit = 2523 %}
+                {% set solar_cost = 3520000 %}
+                {% if (yearly_cons < yearly_limit) %}
+                   {% set costs_wo_solar = ( yearly_cons * discount_price ) %}
+                {% else %}
+                   {% set costs_wo_solar = ( yearly_limit * discount_price + ( yearly_cons - yearly_limit ) * market_price ) %}
+                {% endif %}
+                {% if (yearly_cons - yearly_prod < yearly_limit) %}
+                   {% set costs_with_solar = ( yearly_cons - yearly_prod ) * discount_price %}
+                {% else %}
+                   {% set costs_with_solar = yearly_limit * discount_price + ( yearly_cons - yearly_prod - yearly_limit ) * market_price %}
+                {% endif %}
+                {% set return = solar_cost / ( costs_wo_solar - costs_with_solar ) %}
+            {% endif %}
+            {{ return | float(0) | round(1) }}
+        
+
+
 
 cover:
 
@@ -221,3 +295,11 @@ input_number:
 input_text:
   pump_times:
     name: "Keringető időpontok (pl.: 19:00,20:00)"
+    
+
+
+w1000-energy-monitor:
+  login_user: !secret w1000-email-address
+  login_pass: !secret w1000-password
+  url: https://energia.eon-hungaria.hu/W1000
+  reports: import,export
